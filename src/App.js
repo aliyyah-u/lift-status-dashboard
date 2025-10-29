@@ -31,9 +31,14 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Calculate statistics
+  const totalDisruptions = liftData.length;
+  const uniqueStations = [...new Set(liftData.map(item => item.stopPointName))].length;
+
   // Define the layout configuration
   const layout = [
     { i: 'lift-status', x: 0, y: 0, w: 2, h: 2 },      // Main lift status widget
+    { i: 'statistics', x: 2, y: 0, w: 2, h: 1 },
   ];
 
   const appStyle = {
@@ -76,12 +81,32 @@ function App() {
     lineHeight: '1.5'
   };
 
+    const statBoxStyle = {
+    padding: '15px',
+    backgroundColor: '#f0f4ff',
+    borderRadius: '8px',
+    marginBottom: '10px',
+    textAlign: 'center'
+  };
+
+  const statNumberStyle = {
+    fontSize: '32px',
+    fontWeight: 'bold',
+    color: '#1c3f94',
+    margin: '5px 0'
+  };
+
+  const statLabelStyle = {
+    fontSize: '14px',
+    color: '#666'
+  };
+
   return (
     <div style={appStyle}>
       <h1 style={titleStyle}>TfL Lift Disruptions Dashboard</h1>
-      
+
       {loading && <p>Loading lift disruption data...</p>}
-      {error && <p style={{color: 'red'}}>Error: {error}</p>}
+      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
 
       <GridLayout
         className="layout"
@@ -93,7 +118,7 @@ function App() {
         isResizable={true}
       >
         <div key="lift-status" style={tileStyle}>
-          <h3 style={tileHeaderStyle}>Current Lift Status</h3>
+          <h3 style={tileHeaderStyle}>Current Lift Issues</h3>
           <div>
             {liftData.length === 0 && !loading && (
               <p>No lift disruptions reported</p>
@@ -103,6 +128,17 @@ function App() {
                 {disruption.message}
               </div>
             ))}
+          </div>
+        </div>
+        <div key="statistics" style={tileStyle}>
+          <h3 style={tileHeaderStyle}>Statistics</h3>
+          <div style={statBoxStyle}>
+            <div style={statNumberStyle}>{totalDisruptions}</div>
+            <div style={statLabelStyle}>Total Disruptions</div>
+          </div>
+          <div style={statBoxStyle}>
+            <div style={statNumberStyle}>{uniqueStations}</div>
+            <div style={statLabelStyle}>Affected Stations</div>
           </div>
         </div>
       </GridLayout>
