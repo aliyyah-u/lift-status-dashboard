@@ -1,6 +1,25 @@
 import './App.css';
 import { useState, useEffect } from "react";
 import GridLayout from "react-grid-layout";
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 function App() {
   const [liftData, setLiftData] = useState([]);
@@ -35,10 +54,50 @@ function App() {
   const totalDisruptions = liftData.length;
   const uniqueStations = [...new Set(liftData.map(item => item.stopPointName))].length;
 
-  // Define the layout configuration
+  // Get all unique station names and count disruptions per station
+  const stationCounts = liftData.reduce((acc, disruption) => {
+    acc[disruption.stopPointName] = (acc[disruption.stopPointName] || 0) + 1;
+    return acc;
+  }, {});
+
+  const allStations = Object.entries(stationCounts).sort((a, b) => b[1] - a[1]);
+
+  const barChartData = {
+    labels: allStations.map(([station]) => station),
+    datasets: [
+      {
+        label: 'Number of Disruptions',
+        data: allStations.map(([, count]) => count),
+        backgroundColor: '#1c3f94',
+        borderColor: '#1c3f94',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+        },
+      },
+    },
+  };
+
   const layout = [
-    { i: 'lift-status', x: 0, y: 0, w: 2, h: 2 },      // Main lift status widget
+    { i: 'lift-status', x: 0, y: 0, w: 2, h: 2 },
     { i: 'statistics', x: 2, y: 0, w: 2, h: 1 },
+    { i: 'bar-chart', x: 0, y: 2, w: 4, h: 2 },
   ];
 
   const appStyle = {
@@ -81,7 +140,7 @@ function App() {
     lineHeight: '1.5'
   };
 
-    const statBoxStyle = {
+  const statBoxStyle = {
     padding: '15px',
     backgroundColor: '#f0f4ff',
     borderRadius: '8px',
@@ -99,6 +158,11 @@ function App() {
   const statLabelStyle = {
     fontSize: '14px',
     color: '#666'
+  };
+
+  const chartContainerStyle = {
+    height: '350px',
+    position: 'relative'
   };
 
   return (
@@ -123,13 +187,14 @@ function App() {
             {liftData.length === 0 && !loading && (
               <p>No lift disruptions reported</p>
             )}
-            {liftData.map((disruption, index) => (
+            {liftData.slice(0, 3).map((disruption, index) => (
               <div key={index} style={messageStyle}>
                 {disruption.message}
               </div>
             ))}
           </div>
         </div>
+
         <div key="statistics" style={tileStyle}>
           <h3 style={tileHeaderStyle}>Statistics</h3>
           <div style={statBoxStyle}>
@@ -139,6 +204,17 @@ function App() {
           <div style={statBoxStyle}>
             <div style={statNumberStyle}>{uniqueStations}</div>
             <div style={statLabelStyle}>Affected Stations</div>
+          </div>
+        </div>
+
+        <div key="bar-chart" style={tileStyle}>
+          <h3 style={tileHeaderStyle}>All Stations with Disruptions</h3>
+          <div style={chartContainerStyle}>
+            {liftData.length > 0 ? (
+              <Bar data={barChartData} options={barChartOptions} />
+            ) : (
+              <p>No data available</p>
+            )}
           </div>
         </div>
       </GridLayout>
